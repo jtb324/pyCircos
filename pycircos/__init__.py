@@ -1,3 +1,2 @@
-import pycircos.pycircos as pc
-Garc    = pc.Garc
-Gcircle = pc.Gcircle
+from .plot_classes import chord_plot
+from pycircos import Garc

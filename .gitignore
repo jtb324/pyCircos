@@ -9,3 +9,4 @@
 /dist/
 /pycircos.egg-info/
 .vscode/
+*.ipynb
