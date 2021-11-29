@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import matplotlib.path as mpath
 import matplotlib.patches as mpatches
 from typing import List, Dict, Tuple, Optional
+from pycircos import color_dict
 import numpy as np
 import math
 
@@ -114,6 +115,18 @@ class Gcircle:
                 height = bottom + height/2 + self._garc_dict[key].labelposition
                 self.ax.text(pos + width/2, height, self._garc_dict[key].label, rotation=rot, ha="center", va="center", fontsize=self._garc_dict[key].labelsize)
     
+    @staticmethod
+    def display_colors() -> List:
+        """Class method that shows the possible color options that the user could choose from.
+        Returns
+        _______
+        List[str]
+            returns a list of strings that are the keys to the color_dict class attribute that 
+            describe what colors can be chosen
+        """
+
+        return list(color_dict.keys())
+
     def setspine(self, garc_id, raxis_range=None, facecolor="#30303000", edgecolor="#303030", linewidth=0.75):
         pos     = self._garc_dict[garc_id].coordinates[0] 
         width   = self._garc_dict[garc_id].coordinates[-1] - self._garc_dict[garc_id].coordinates[0]
@@ -130,7 +143,6 @@ class Gcircle:
 
         self.figure.savefig(file_name + "." + format, bbox_inches="tight", dpi=dpi)
 
-        # return self.figure 
 
 class Lineplot(Gcircle):
     """Class for a lineplot object"""
@@ -155,34 +167,52 @@ class featureplot(Gcircle):
 
 class chord_plot(Gcircle):
 
-    def __init__(self, figsize: Tuple[int, int] = (8,8)) -> None:
+    def __init__(self, figsize: Tuple[int, int, int] = (8,8)) -> None:
+        """Class for making chord diagrams
+        Parameters
+        __________        
+        figsize : Tuple[int, int]
+            tuple of integers that gives the figure dimensions
+        """
         super().__init__(figsize)
 
-    def plot(self, start_list: List, end_list: List, facecolor: str = None, linewidth: float = 0.0) -> None:
+    
+    def plot(self, pair_1: str, pair_2: str, facecolor: str = color_dict["light gray"], linewidth: float = 0.0) -> None:
+        
+        garc_id1: str = pair_1
+        garc_id2: str = pair_2
 
-        garc_id1: str = start_list[0]
-        garc_id2: str = end_list[0]
+        id1_start: int = 10
+        id1_end: int = 950
+        id_1_stop: int = 950
+
+        id2_start: int = 10
+        id2_end: int = 20
+        id_2_stop: int = 950
+
+        # need to work on designing the start and endpoints so that it fits right
 
         center: int = 0 
 
         start1 = self._garc_dict[garc_id1].coordinates[0] 
         end1   = self._garc_dict[garc_id1].coordinates[-1] 
         size1  = self._garc_dict[garc_id1].size - 1
-        sstart = start1 + ((end1-start1) * start_list[1]/size1) 
-        send   = start1 + ((end1-start1) * start_list[2]/size1)
-        stop   = start_list[3] 
+        sstart = start1 + ((end1-start1) * id1_start/size1) 
+        send   = start1 + ((end1-start1) * id1_end/size1)
+        stop   = id_1_stop 
         
         start2 = self._garc_dict[garc_id2].coordinates[0] 
         end2   = self._garc_dict[garc_id2].coordinates[-1] 
         size2  = self._garc_dict[garc_id2].size - 1
-        ostart = start2 + ((end2-start2) * end_list[1]/size2) 
-        oend   = start2 + ((end2-start2) * end_list[2]/size2)
-        etop   = end_list[3] 
+        ostart = start2 + ((end2-start2) * id2_start/size2) 
+        oend   = start2 + ((end2-start2) * id2_end/size2)
+        etop   = id_2_stop
 
         if facecolor is None:
             facecolor = Gcircle.colors[self.color_cycle % len(Gcircle.colors)] + "80" 
             self.color_cycle += 1
         
+
         z1 = stop - stop * math.cos(abs((send-sstart) * 0.5)) 
         z2 = etop - etop * math.cos(abs((oend-ostart) * 0.5)) 
 
@@ -198,9 +228,12 @@ class chord_plot(Gcircle):
                             (Path.CURVE3,  ((sstart+send)*0.5, stop+z1)),
                             (Path.CURVE3,  (sstart, stop)),
                         ]
+
             codes, verts = list(zip(*path_data)) 
             path  = mpath.Path(verts, codes)
+
             patch = mpatches.PathPatch(path, facecolor=facecolor, linewidth=linewidth, zorder=0)
+            
             self.ax.add_patch(patch)
 
 

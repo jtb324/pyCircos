@@ -2,21 +2,17 @@ import os
 import re
 import io 
 import sys
-import math
 import urllib
 import tempfile
 import requests
 import collections
 import numpy as np
 import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.path    as mpath
-import matplotlib.patches as mpatches
 from Bio import SeqIO
 import Bio
 from typing import List, Dict, Tuple
+from pycircos import color_dict
 
-matplotlib.rcParams["figure.max_open_warning"] = 0
 matplotlib.rcParams['ps.fonttype']       = 42
 matplotlib.rcParams['pdf.fonttype']      = 42
 matplotlib.rcParams['font.sans-serif']   = ["Arial","Lucida Sans","DejaVu Sans","Lucida Grande","Verdana"]
@@ -32,26 +28,123 @@ matplotlib.rcParams['xtick.major.size']  = 6
 matplotlib.rcParams['ytick.major.size']  = 6
 
 class Garc:
-    #list100 = ["#ffcdd2","#f8bbd0","#e1bee7","#d1c4e9","#c5cae9","#bbdefb","#b3e5fc","#b2ebf2","#b2dfdb","#c8e6c9","#dcedc8","#f0f4c3","#fff9c4","#ffecb3","#ffe0b2","#ffccbc","#d7ccc8","#cfd8dc",
-    colorlist = ["#ff8a80","#ff80ab","#ea80fc","#b388ff","#8c9eff","#82b1ff","#84ffff","#a7ffeb","#b9f6ca","#ccff90","#f4ff81","#ffff8d","#ffe57f","#ffd180","#ff9e80","#bcaaa4","#eeeeee","#b0bec5",
-                 "#ff5252","#ff4081","#e040fb","#7c4dff","#536dfe","#448aff","#18ffff","#64ffda","#69f0ae","#b2ff59","#eeff41","#ffff00","#ffd740","#ffab40","#ff6e40","#a1887f","#e0e0e0","#90a4ae"]
+    
+    # setting a class attribute for all the colors that can be used
+    color_dict: Dict[str, str] = {
+        "light red": "#ff8a80",
+        "light pink": "#ff80ab",
+        "soft magenta":"#ea80fc",
+        "light violet": "#b388ff",
+        "light blue": "#82b1ff",
+        "light cyan": "#84ffff",
+        "pale cyan": "#a7ffeb",
+        "lime green": "#b9f6ca",
+        "light green": "#ccff90",
+        "light yellow": "#ffe57f",
+        "light orange": "#ffd180",
+        "grayish red": "#bcaaa4",
+        "light gray": "#eeeeee",
+        "grayish blue": "#b0bec5",
+        "red": "#ff5252",
+        "neon pink": "#ff4081",
+        "bright magenta": "#e040fb",
+        "purple": "#7c4dff",
+        "soft blue": "#536dfe",
+        "blue": "#448aff",
+        "cyan": "#18ffff",
+        "aquamarine": "#64ffda",
+        "green yellow": "#b2ff59",
+        "yellow": "#ffff00",
+        "sunglow": "#ffcc33",
+        "sandy brown": "#f4a460",
+        "cinereous": "#98817b",
+        "gainsboro": "#e0e0e0",
+        "gray": "#90a4ae"
+    }
+    # setting a class attribute for an id
     _arcnum = 0
+
+    @classmethod
+    def display_colors(cls) -> List:
+        """Class method that shows the possible color options that the user could choose from.
+        Returns
+        _______
+        List[str]
+            returns a list of strings that are the keys to the color_dict class attribute that 
+            describe what colors can be chosen
+        """
+
+        return list(color_dict.keys())
+
     def __setitem__(self, key, item):
         self.__dict__[key] = item
 
     def __getitem__(self, key):
         return self.__dict__[key] 
+    
+    def change_face_color(self, color: str) -> None:
+        """Function to change the face color for a specific Garc 
+        Parameters
+        __________
+        color : str
+            string that list the color that the user wants to change the facecolor to
+        """
 
-    def __init__(self, arc_id=None, record=None, size=1000, interspace=3, raxis_range=(500, 550), facecolor=None, edgecolor="#303030", linewidth=0.75, label=None, labelposition=0, labelsize=10, label_visible=False): 
-        self._parental_gcircle = None
+        error_message: str = f"color, {color}, not found. Please check the acceptable colors using the class method .display_colors()"
+
+        self.facecolor = Garc.color_dict.get(color, sys.exit(error_message))
+
+    def change_edge_color(self, color: str) -> None:
+        """Function to change the edgecolor for a specific Garc 
+        Parameters
+        __________
+        color : str
+            string that list the color that the user wants to change the edgecolor to
+        """
+
+        error_message: str = f"color, {color}, not found. Please check the acceptable colors using the class method .display_colors()"
+
+        self.edgecolor = Garc.color_dict.get(color, sys.exit(error_message))
+
+    def show_attribute(self) -> None:
+        """Function that will show all the attributes of a certain object"""
+        print("The attributes of the class are:\n")
+
+        # print out each attribute of the class by accessing the attribute dictionary
+        for key in self.__dict__.keys():
+            print(key)
+
+    def random_facecolor(self,) -> None:    
+        """Function for if the user wants to use random colors for the facecolor"""
+        self.facecolor = Garc.color_dist[Garc._arcnum % len(list(Garc.color_dist.keys()))]
+
+    def __init__(self, arc_id: str=None, record: str=None, size: int =1000, interspace: int =3): 
+
+        # setting an id using either the id passed by the user or the class attribute for the id
         if arc_id == None:
             self.arc_id = str(Garc._arcnum) 
         else:
             self.arc_id = arc_id
 
+        # establishing initial attributes of the class
+        self._parental_gcircle = None
+        self.interspace  = 2 * np.pi * (interspace / 360)
+        self.raxis_range: Tuple[int, int] = (500, 550)
+        # The face color defaults to grey
+        self.facecolor: str = Garc.color_dict["gray"]
+        # setting an initial edge color
+        self.edgecolor: str = "#303030"
+        self.linewidth: float = 0.75
+
+        #The label will initial be set to the arc_id but the user can change this by accessing the attribute
+        self.label: str = self.arc_id
+        self.labelposition: int = 0
+        self.labelsize: int = 10
+        self.label_visible: bool = False
+
         if record is None:
             self.record = None
-            self.size = size
+            self.size: int = 1000
         
         elif type(record) == Bio.SeqRecord.SeqRecord:
             self.record = record
@@ -87,24 +180,8 @@ class Garc:
             self.record = None
             self.size = size
         
-        if facecolor is None:
-            facecolor = Garc.colorlist[Garc._arcnum % len(Garc.colorlist)] 
-        self.interspace  = 2 * np.pi * (interspace / 360)
-        self.raxis_range = raxis_range 
-        self.facecolor   = facecolor 
-        self.edgecolor   = edgecolor
-        self.linewidth   = linewidth
-        
-        if label is None:
-            self.label = arc_id
-        else:
-            self.label = label
-
-        self.label_visible = label_visible
-        self.labelposition = labelposition
-        self.labelsize = labelsize
         Garc._arcnum += 1
-
+    
     def calc_density(self, positions, window_size=1000):
         densities = [] 
         positions.sort()
