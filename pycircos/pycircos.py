@@ -29,38 +29,6 @@ matplotlib.rcParams['ytick.major.size']  = 6
 
 class Garc:
     
-    # setting a class attribute for all the colors that can be used
-    color_dict: Dict[str, str] = {
-        "light red": "#ff8a80",
-        "light pink": "#ff80ab",
-        "soft magenta":"#ea80fc",
-        "light violet": "#b388ff",
-        "light blue": "#82b1ff",
-        "light cyan": "#84ffff",
-        "pale cyan": "#a7ffeb",
-        "lime green": "#b9f6ca",
-        "light green": "#ccff90",
-        "light yellow": "#ffe57f",
-        "light orange": "#ffd180",
-        "grayish red": "#bcaaa4",
-        "light gray": "#eeeeee",
-        "grayish blue": "#b0bec5",
-        "red": "#ff5252",
-        "neon pink": "#ff4081",
-        "bright magenta": "#e040fb",
-        "purple": "#7c4dff",
-        "soft blue": "#536dfe",
-        "blue": "#448aff",
-        "cyan": "#18ffff",
-        "aquamarine": "#64ffda",
-        "green yellow": "#b2ff59",
-        "yellow": "#ffff00",
-        "sunglow": "#ffcc33",
-        "sandy brown": "#f4a460",
-        "cinereous": "#98817b",
-        "gainsboro": "#e0e0e0",
-        "gray": "#90a4ae"
-    }
     # setting a class attribute for an id
     _arcnum = 0
 
@@ -92,7 +60,7 @@ class Garc:
 
         error_message: str = f"color, {color}, not found. Please check the acceptable colors using the class method .display_colors()"
 
-        self.facecolor = Garc.color_dict.get(color, sys.exit(error_message))
+        self.facecolor = color_dict.get(color, sys.exit(error_message))
 
     def change_edge_color(self, color: str) -> None:
         """Function to change the edgecolor for a specific Garc 
@@ -104,7 +72,7 @@ class Garc:
 
         error_message: str = f"color, {color}, not found. Please check the acceptable colors using the class method .display_colors()"
 
-        self.edgecolor = Garc.color_dict.get(color, sys.exit(error_message))
+        self.edgecolor = color_dict.get(color, sys.exit(error_message))
 
     def show_attribute(self) -> None:
         """Function that will show all the attributes of a certain object"""
@@ -131,7 +99,7 @@ class Garc:
         self.interspace  = 2 * np.pi * (interspace / 360)
         self.raxis_range: Tuple[int, int] = (500, 550)
         # The face color defaults to grey
-        self.facecolor: str = Garc.color_dict["gray"]
+        self.facecolor: str = color_dict["gray"]
         # setting an initial edge color
         self.edgecolor: str = "#303030"
         self.linewidth: float = 0.75
