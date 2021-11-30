@@ -14,6 +14,7 @@ color_dict: Dict[str, str] = {
         "light yellow": "#ffe57f",
         "light orange": "#ffd180",
         "grayish red": "#bcaaa4",
+        "black": "#000000",
         "light gray": "#eeeeee",
         "grayish blue": "#b0bec5",
         "red": "#ff5252",

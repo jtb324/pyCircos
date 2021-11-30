@@ -82,11 +82,12 @@ class Garc:
         for key in self.__dict__.keys():
             print(key)
 
-    def random_facecolor(self,) -> None:    
+    def random_facecolor(self) -> None:    
         """Function for if the user wants to use random colors for the facecolor"""
+
         self.facecolor = Garc.color_dist[Garc._arcnum % len(list(Garc.color_dist.keys()))]
 
-    def __init__(self, arc_id: str=None, record: str=None, size: int =1000, interspace: int =3): 
+    def __init__(self, arc_id: str=None, interspace: int =3): 
 
         # setting an id using either the id passed by the user or the class attribute for the id
         if arc_id == None:
@@ -100,8 +101,8 @@ class Garc:
         self.raxis_range: Tuple[int, int] = (500, 550)
         # The face color defaults to grey
         self.facecolor: str = color_dict["gray"]
-        # setting an initial edge color
-        self.edgecolor: str = "#303030"
+        # setting an initial edge color of black
+        self.edgecolor: str = color_dict["black"]
         self.linewidth: float = 0.75
 
         #The label will initial be set to the arc_id but the user can change this by accessing the attribute
@@ -109,47 +110,9 @@ class Garc:
         self.labelposition: int = 0
         self.labelsize: int = 10
         self.label_visible: bool = False
+        self.record = None
+        self.size: int = 1000
 
-        if record is None:
-            self.record = None
-            self.size: int = 1000
-        
-        elif type(record) == Bio.SeqRecord.SeqRecord:
-            self.record = record
-            self.size   = len(str(self.record.seq))
-        
-        elif type(record) == str:
-            match = re.fullmatch("[a-zA-Z]{1,2}_?[0-9]{5,6}", record)
-            if os.path.exists(record) == True:
-                self.record = SeqIO.read(value, format="genbank")  
-            
-            if match is None:
-                raise ValueError("Incorrect value for NCBI accession number.") 
-            else:
-                url = "https://www.ncbi.nlm.nih.gov/sviewer/viewer.cgi?tool=portal&save=file&log$=seqview&db=nuccore&report=gbwithparts&id={}&withparts=on".format(record) 
-            outb = io.BytesIO()
-            outs = io.StringIO()
-            headers = {"User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:47.0) Gecko/20100101 Firefox/47.0"} 
-            request = urllib.request.Request(url, headers=headers) 
-            
-            with urllib.request.urlopen(request) as u:
-                outb.write(u.read())
-            outs.write(outb.getvalue().decode())
-            
-            with tempfile.TemporaryFile(mode="w+") as o:
-                content = outs.getvalue()
-                o.write(content)
-                o.seek(0)  
-                record = SeqIO.parse(o,"genbank")
-                record = next(record)
-            self.record = record 
-            self.size = len(str(self.record.seq))
-        else:
-            self.record = None
-            self.size = size
-        
-        Garc._arcnum += 1
-    
     def calc_density(self, positions, window_size=1000):
         densities = [] 
         positions.sort()
@@ -223,4 +186,85 @@ class Garc:
         self["{}{}_skew".format(n1,n2)] = gc_skews
         gc_skews = np.array(gc_skews)
         return gc_skews 
+
+class bioGarc(Garc):
+    """Child class of the Garc class that will set the size and record if the record is a Bio.SeqRecord.SeqRecord"""
+    def __init__(self, arc_id: str, record: str, value: str, interspace: int = 3, ):
+        
+        super.__init__(self, arc_id, interspace)  
+
+        if type(record) == Bio.SeqRecord.SeqRecord:
+            self.record = record
+            self.size   = len(str(self.record.seq))
+        
+        elif type(record) == str:
+            match = re.fullmatch("[a-zA-Z]{1,2}_?[0-9]{5,6}", record)
+            if os.path.exists(record) == True:
+                self.record = SeqIO.read(value, format="genbank")  
+            
+            if match is None:
+                raise ValueError("Incorrect value for NCBI accession number.") 
+            else:
+                url = "https://www.ncbi.nlm.nih.gov/sviewer/viewer.cgi?tool=portal&save=file&log$=seqview&db=nuccore&report=gbwithparts&id={}&withparts=on".format(record) 
+            outb = io.BytesIO()
+            outs = io.StringIO()
+            headers = {"User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:47.0) Gecko/20100101 Firefox/47.0"} 
+            request = urllib.request.Request(url, headers=headers) 
+            
+            with urllib.request.urlopen(request) as u:
+                outb.write(u.read())
+            outs.write(outb.getvalue().decode())
+            
+            with tempfile.TemporaryFile(mode="w+") as o:
+                content = outs.getvalue()
+                o.write(content)
+                o.seek(0)  
+                record = SeqIO.parse(o,"genbank")
+                record = next(record)
+            self.record = record 
+            self.size = len(str(self.record.seq))
+        
+        Garc._arcnum += 1
+
+class Genbank_Garc(Garc):
+    """Child class of Garc that expects a string file as a record. This is expected for a genbank file"""
+    def __init__(self, arc_id: str, record: str, value: str, interspace: int = 3):
+        
+        super.__init__(self, arc_id, interspace)  
+
+        if type(record) == str:
+            match = re.fullmatch("[a-zA-Z]{1,2}_?[0-9]{5,6}", record)
+            if os.path.exists(record) == True:
+                self.record = SeqIO.read(value, format="genbank")  
+            else:
+                raise FileNotFoundError(f"The file, {record}, was not found")
+            
+            if match is None:
+                raise ValueError("Incorrect value for NCBI accession number.") 
+            else:
+                url = "https://www.ncbi.nlm.nih.gov/sviewer/viewer.cgi?tool=portal&save=file&log$=seqview&db=nuccore&report=gbwithparts&id={}&withparts=on".format(record) 
+
+            outb = io.BytesIO()
+            outs = io.StringIO()
+            
+            headers = {"User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:47.0) Gecko/20100101 Firefox/47.0"} 
+            request = urllib.request.Request(url, headers=headers) 
+            
+            with urllib.request.urlopen(request) as u:
+                outb.write(u.read())
+            outs.write(outb.getvalue().decode())
+            
+            with tempfile.TemporaryFile(mode="w+") as o:
+                content = outs.getvalue()
+                o.write(content)
+                o.seek(0)  
+                record = SeqIO.parse(o,"genbank")
+                record = next(record)
+            self.record = record 
+            self.size = len(str(self.record.seq))
+
+        else:
+            raise TypeError(f"Expected the 'record' input to be a string instead it was a {type(record)}")
+    
+    
   
